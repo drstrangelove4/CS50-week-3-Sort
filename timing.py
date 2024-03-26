@@ -1,108 +1,207 @@
-import matplotlib.pyplot as plt
-import os
-import subprocess
-from datetime import datetime
-from pprint import pprint
+#include <cs50.h>
+#include <ctype.h>
+#include <stdio.h>
 
+void bubble(int *array);
+void merge(int *left_array, int *right_array, int *array, int left_length, int right_length);
+void merge_sort(int *array, int length);
+void print_array(int *array);
+void refresh_array_order(int *array);
+void selection(int *array);
 
-# ----------------------------------------------------------------------------------------------------------------------
+const int LENGTH = 20;
 
-# Constants
-PASSES = 1 # change to increase/decrease accuracy. 1 is minimum required to allow the program to function
-SECONDS_CONVERTION  = 100_000
+int main()
+{
 
+    // Populate array
+    int data[LENGTH];
+    refresh_array_order(data);
 
-# ----------------------------------------------------------------------------------------------------------------------
+    // Bubble Algorithm
+    printf("Bubble sorting algorithm:\n");
+    printf("Pre sort: ");
+    print_array(data);
+    bubble(data);
+    printf("Post sort: ");
+    print_array(data);
+    printf("\n");
 
+    refresh_array_order(data);
 
-def time_algo(command, filename, passes):
-    """
-    Runs the C sort algorithms provided for X number of passes and returns an averaged time taken.
-    """
-    results = []
+    // Selection Algorithm
+    printf("Selection sorting algorithm:\n");
+    printf("Pre sort: ");
+    print_array(data);
+    selection(data);
+    printf("Post sort: ");
+    print_array(data);
+    printf("\n");
 
-    for _ in range(passes):
-        start_time = datetime.now()
-        try:
-            # Run the C commands from python and plug in a file
-            subprocess.run([f"./{command}", filename])
-        except Exception as e:
-            print(e)
-        end_time = datetime.now()
+    refresh_array_order(data);
 
-        # Convert the time to seconds
-        results.append(((end_time - start_time).microseconds) / SECONDS_CONVERTION)
+    // Merge sort    
+    printf("Merge sort algorithm:\n");
+    printf("Pre sort: ");
+    print_array(data);
+    merge_sort(data, LENGTH);
+    printf("Post sort: ");
+    print_array(data);
+    printf("\n");
+}
 
-    # Return the average time of the passes
-    return {filename: sum(results) / passes}
+void refresh_array_order(int *array)
+// Sets the array values from LENGTH to 1
+{
+    for (int i = 0; i < LENGTH; i++)
+    {
+        array[i] = LENGTH - i;
+    }
+}
 
+void selection(int *array)
+// The selection array
+{
+    // Select 'I' number in the array starting from the start
+    for (int i = 0; i < LENGTH; i++)
+    {
+        int smallest_index = i;
+        // Iterate over all items at I + 1 and find the lowest value in the pool.
+        for (int j = i + 1; j < LENGTH; j++)
+        {
+            if (array[j] < array[i])
+            {
+                smallest_index = j;
+            }
+        }
+        // Swap the smallest and array i
+        if (smallest_index != i)
+        {
+            int smallest_value = array[smallest_index];
+            int current_i_value = array[i];
 
-# ----------------------------------------------------------------------------------------------------------------------
+            array[i] = smallest_value;
+            array[smallest_index] = current_i_value;
+        }
+    }
+}
 
+void bubble(int *array)
+// Bubble sort algorithm
+{
+    // Check if the current selected int at J is larger than the next int. If so swap places.
+    for (int i = 0; i < LENGTH; i++)
+    {
+        bool swap = false;
 
-def print_results(raw_data):
-    """
-    Displays both raw data and graphed data. 
-    """
-    # Raw data.
-    for dictionary in raw_data:
-        pprint(f"{dictionary}")
-        print()
+        for (int j = 0; j < LENGTH - 1; j++)
+        {
+            int current_number = array[j];
+            int next_number = array[j + 1];
 
-    # Create subplots and labels for each sorting algorithm
-    fig, ax = plt.subplots(1, 3, figsize=(7, 7))
-    fig.supylabel("Time to finish (seconds)")
+            if (current_number > next_number)
+            {
+                array[j] = next_number;
+                array[j + 1] = current_number;
+                swap = true;
+            }
+        }
+        if (!swap)
+        {
+            break;
+        }
+    }
+}
 
-    current_subplot = 0
+void merge_sort(int *array, int length)
+{
+    // Get the length of the current array we are working with
+    int array_length = length;
 
-    # Iterate over the raw data and plot the data
-    for dictionary in raw_data:
-        name = []
-        values = []
-        for value in dictionary:
-            # Get the name and value of each data point
-            for x in range(len(dictionary[value])):
-                for item in dictionary[value][x]:                    
-                    name.append(item)
-                    values.append(dictionary[value][x][item])
+    // Base case
+    if (array_length <= 1)
+    {
+        return;
+    }
 
-            # Plot the data
-            for x in range(len(name)):
-                ax[current_subplot].bar(x + 1, values[x], label=name[x])
-                ax[current_subplot].set_title(value)
-        current_subplot += 1
+    // Create 2 arrays for each half of the original array
+    int middle_position = array_length / 2;
+    int left_array[middle_position];
+    int right_array[array_length - middle_position];
 
-    # Show the graph, legend and formatting.
-    plt.legend(bbox_to_anchor=(1.25, 0.6), loc="center right")
-    plt.tight_layout()
-    plt.show()
+    // right array index
+    int j = 0;
 
+    // Populate arrays
+    for (int i = 0; i < array_length; i++)
+    {
+        if (i < middle_position)
+        {
+            left_array[i] = array[i];
+        }
+        else
+        {
+            right_array[j] = array[i];
+            j++;
+        }
+    }
 
-# ----------------------------------------------------------------------------------------------------------------------
+    // Get the array lengths
+    int left_array_length = sizeof(left_array) / sizeof(left_array[0]);
+    int right_array_length = sizeof(right_array) / sizeof(right_array[0]);
 
+    // Keep calling until we are at the base case.
+    merge_sort(left_array, left_array_length);
+    merge_sort(right_array, right_array_length);
+    merge(left_array, right_array, array, left_array_length, right_array_length);
+}
 
-def main():
-    # Get all the files in directory
-    command_names = []
+void merge(int *left_array, int *right_array, int *array, int left_length, int right_length)
+{
+    int i, l, r = 0;
 
-    files = os.listdir(os.getcwd())
-    for file in files:
-        if ".txt" not in file:
-            if ".py" not in file:
-                command_names.append(file)
+    // Check the conditions for merging
+    // While there are elements still in our arrays we will continue to add them to the original list
+    while (l < left_length && r < right_length)
+    {
+        // If the element in our left array is smaller than the element in the right array add it to the original list
+        if (left_array[l] < right_array[r])
+        {
+            array[i] = left_array[l];
+            i++;
+            l++;
+        }
+        // If the element in the right array is smaller add that to the original list
+        else
+        {
+            array[i] = right_array[r];
+            i++;
+            r++;
+        }
+    }
 
-    results = []
+    // If there are any left over elements that we can't compare add them to the array.
+    while (l < left_length)
+    {
+        array[i] = left_array[l];
+        i++;
+        l++;
+    }
 
-    # Get the time takento sort
-    for command in command_names:
-        command_results = []
-        for file in files:
-            if ".txt" in file:
-                command_results.append(time_algo(command, file, PASSES))
-        results.append({command: command_results})
+    while (r < right_length)
+    {
+        array[i] = right_array[r];
+        i++;
+        r++;
+    }
+}
 
-    print_results(raw_data=results)
-
-
-if __name__ == "__main__":
-    main()
+void print_array(int *array)
+// Prints the array values for LENGTH items.
+{
+    for (int i = 0; i < LENGTH; i++)
+    {
+        printf("%i ", array[i]);
+    }
+    printf("\n");
+}
